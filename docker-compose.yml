@@ -1,0 +1,26 @@
+version: "3"
+services:
+  mongodb:
+    image: mongo:latest
+    ports:
+      - "27017:8082"
+#    network_mode: host
+    volumes:
+      - mongo_database:/data/capstone
+    networks:
+      - capstone-nd-mongo
+
+  capstone:
+    image: capstone:latest
+    build: .
+    depends_on:
+      - mongodb
+    ports:
+      - "8081:8081"
+    networks:
+      - capstone-nd-mongo
+
+networks:
+  capstone-nd-mongo:
+volumes:
+  mongo_database:

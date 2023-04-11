@@ -8,4 +8,4 @@ MAINTAINER capstone.com
 
 ENTRYPOINT ["java", "-jar", "/spring-capstone.jar"]
 
-EXPOSE 8080
+#EXPOSE 5050
