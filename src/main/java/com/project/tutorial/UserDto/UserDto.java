@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 public class UserDto {
     private String fullname;
+    private String accVisibility;
 
     private ArrayList<String> List = new ArrayList<>();
 
@@ -21,5 +22,13 @@ public class UserDto {
 
     public void setFullname(String fullname) {
         this.fullname = fullname;
+    }
+
+    public String getAccVisibility() {
+        return accVisibility;
+    }
+
+    public void setAccVisibility(String accVisibility) {
+        this.accVisibility = accVisibility;
     }
 }

@@ -1,17 +1,20 @@
 package com.project.tutorial.Controllers;
 
+import com.project.tutorial.Config.SecurityConfig;
 import com.project.tutorial.Jwt.JwtToken;
 import com.project.tutorial.Models.LoginAuthRequest;
 import com.project.tutorial.Models.LoginAuthResponse;
 import com.project.tutorial.Models.User;
+import com.project.tutorial.Models.UserFriends;
+import com.project.tutorial.Repositories.UserFriendsRepo;
 import com.project.tutorial.Repositories.UserRepository;
+import com.project.tutorial.Services.EncryptionAndDecryption;
 import com.project.tutorial.Services.MailService;
 import com.project.tutorial.Services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -26,7 +29,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 
 @RestController
@@ -43,18 +45,31 @@ public class UserAuthController {
     @Autowired
     JwtToken jwtToken;
     @Autowired
+    SecurityConfig security;
+    @Autowired
     PasswordEncoder passwordEncoder;
+    @Autowired
+    EncryptionAndDecryption encryptionAndDecryption;
+    @Autowired
+    UserFriendsRepo userFriendsRepo;
 
-    @PostMapping("/signin")
-    public String signIn(@RequestBody User user) throws MessagingException, UnsupportedEncodingException {
+    @PostMapping("/signup")
+    public String signIn(@RequestBody User user) throws Exception {
         if (!userRepository.existsById(user.getEmail())) {
-            BCryptPasswordEncoder bcrypt = new BCryptPasswordEncoder();
-            String encryptPwd = bcrypt.encode(user.getPassword());
-            user.setPassword(encryptPwd);
-            user.setFriends(new ArrayList<>());
+            String decrypt = encryptionAndDecryption.decrypt(user.getPassword());
+            BCryptPasswordEncoder bCrypt = new BCryptPasswordEncoder();
+            String hashPass = bCrypt.encode(decrypt);
+            user.setPassword(hashPass);
+            user.setFollowing(new ArrayList<>());
+            user.setFollowers(new ArrayList<>());
             user.setFriendRequests(new ArrayList<>());
+            user.setFriends(new ArrayList<>());
+            UserFriends userFriends = new UserFriends();
+            userFriends.setEmail(user.getEmail());
+            userFriends.setFriends(new ArrayList<>());
             userRepository.save(user);
             mailService.register(user);
+            userFriendsRepo.save(userFriends);
             return "Verification mail sent successfully.";
         } else {
             Optional<User> userDetails = userRepository.findById(user.getEmail());
@@ -65,7 +80,7 @@ public class UserAuthController {
             }
         }
     }
-    @GetMapping("/verify")
+    @GetMapping("/verifysignup")
     public ResponseEntity<?> verifyUser(@RequestParam String code){
         String[] paramList = code.split("-");
         String verifyCode = paramList[0];
@@ -75,65 +90,67 @@ public class UserAuthController {
             user.get().setEnabled(true);
             user.get().setVerifyotp(null);
             userRepository.save(user.get());
-            return ResponseEntity.ok("Account has been Verified Successfully");
+            return ResponseEntity.ok("Account Verified Successfully");
         }
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid Credentials.");
     }
 
     @PostMapping("/login")
-    private ResponseEntity<?> login(@RequestBody LoginAuthRequest loginAuthRequest){
+    private ResponseEntity<?> login(@RequestBody LoginAuthRequest loginAuthRequest) throws Exception {
         String email = loginAuthRequest.getEmail();
-        String encPassword = loginAuthRequest.getPassword();
-        if (userRepository.existsById(email)){
+        String password = loginAuthRequest.getPassword();
+        if (userRepository.existsById(email)) {
             Optional<User> user = userRepository.findOneById(email);
-            if (user.get().getEnabled()){
-                try{
-                    authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(email,encPassword));
-                    }catch (Exception e){
-                        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid credentials.");
-                    }
-                final UserDetails userDetails = userService.loadUserByUsername(loginAuthRequest.getEmail());
-                final String jwt = jwtToken.generateToken(userDetails);
-                return ResponseEntity.ok(new LoginAuthResponse(jwt));
+            if (user.get().getEnabled()) {
+                String decryptPass = encryptionAndDecryption.decrypt(password);
+                BCryptPasswordEncoder bCrypt = new BCryptPasswordEncoder();
+                if (bCrypt.matches(decryptPass,user.get().getPassword())){
+                    final UserDetails userDetails = userService.loadUserByUsername(loginAuthRequest.getEmail());
+                    final String jwt = jwtToken.generateToken(userDetails);
+                    return ResponseEntity.ok(new LoginAuthResponse(jwt));
                 }
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Account is not enabled.");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Incorrect password.");
             }
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Account is not enabled or invalid password.");
+        }
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("User not found.");
     }
-
-    @GetMapping("/login/forgot/{email}")
+    @GetMapping("/forgot/{email}")
     public ResponseEntity<?> forgotPwdLink(@PathVariable String email) throws MessagingException, UnsupportedEncodingException {
-        if (userRepository.existsById(email)) {
-            Optional<User> user = userRepository.findById(email);
-            mailService.forgotPassword(user.get());
-            return ResponseEntity.ok("Forgot password link has been sent to " + email);
-        }
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Email not found");
+        Optional<User> user = userRepository.findById(email);
+        if (user.isPresent()) {
+            if (user.get().getEnabled()) {
+                mailService.forgotPassword(user.get());
+                return ResponseEntity.ok("Forgot password link has been sent to " + email);
+            }return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Not enabled");
+        }return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Email not found, Account not enabled.");
     }
 
-    @PostMapping("/forgot/verify")
-    public ResponseEntity<?> forgotPassword(@RequestBody HashMap<String, String> forgotUser, @RequestParam String code) {
-        String[] paramList = code.split("-");
-        String verifyCode = paramList[0];
-        String emailId = paramList[1];
-        try {
-            Optional<User> user = userRepository.findById(emailId);
+    @PostMapping("/password/verify")
+    private ResponseEntity<?> passwordUpdate(@RequestBody HashMap<String,String> forgotUser, @RequestParam String code) throws Exception {
+        String[] list = code.split("-");
+        String verifyCode = list[0];
+        String userEmail = list[1];
+        if (userRepository.existsById(userEmail)) {
+            Optional<User> user = userRepository.findById(userEmail);
+            String previousPass = user.get().getPassword();
             if (user.get().getVerifyotp() != null && user.get().getVerifyotp().equals(verifyCode)) {
-                if (forgotUser.get("newPassword").equals(forgotUser.get("reNewPassword"))) {
-                    user.get().setPassword(passwordEncoder.encode(forgotUser.get("newPassword")));
-                    user.get().setVerifyotp(null);
-                    userRepository.save(user.get());
-                    return ResponseEntity.ok("Password has been changed successfully");
-                }else {
-                    return ResponseEntity.status(HttpStatus.OK).body("Confirm Password Did not Match.");
-                }
-            }else {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Verification is not Valid.");
-            }
-        }catch (NoSuchElementException e){
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid Verification.");
-        }
+                BCryptPasswordEncoder bCrypt = new BCryptPasswordEncoder();
+                String newPassPlain = encryptionAndDecryption.decrypt(forgotUser.get("newPassword"));
+                String newPassHash = bCrypt.encode(newPassPlain);
+                if (!bCrypt.matches(newPassPlain, previousPass)){
+                    if (forgotUser.get("newPassword").equals(forgotUser.get("reNewPassword"))) {
+                        user.get().setPassword(newPassHash);
+                        user.get().setVerifyotp(null);
+                        userRepository.save(user.get());
+                        return ResponseEntity.ok("Password changed");
+                    }
+                }return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("New password is looks same like previous Password.");
+            }return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Verification failed.");
+        } return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("User not found.");
     }
+
+
     @GetMapping("/oauthsucess/{jwt}")
     public String OauthSuccess(@PathVariable String jwt){
         System.out.println(jwt);
@@ -143,7 +160,6 @@ public class UserAuthController {
     public String OauthUnsuccess(){
         return "<h1> Oauth login faild. </h1>";
     }
-
     @GetMapping("/sociallogin")
     public String login() {
         return "login";
@@ -157,4 +173,11 @@ public class UserAuthController {
         }
         return "redirect:/";
     }
+
+    @GetMapping("/password/{plainText}")
+    private String passwordGenerate(@PathVariable String plainText) throws Exception {
+        String encrypted = encryptionAndDecryption.encrypt(plainText);
+        return (encrypted);
+    }
+
 }

@@ -49,7 +49,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .anyRequest().authenticated()
                 .and().sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
                 .oauth2Login()
-                .loginPage("/restapi/sociallogin")
+                .loginPage("/restapi/verify")
                 .userInfoEndpoint()
                 .userService(oAuth2UserService).and()
                 .successHandler(new AuthenticationSuccessHandler() {

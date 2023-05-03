@@ -6,7 +6,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.RequestMapping;
 
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
@@ -46,7 +45,7 @@ public class MailService {
         helper.setTo(toAddress);
         helper.setSubject(subject);
         content = content.replace("[[name]]", user.getFullname());
-        String verifyUrl ="http://127.0.0.1:8080/verify?code="+code+"-"+user.getEmail();
+        String verifyUrl ="http://127.0.0.1:8080/restapi/verifysignup?code="+code+"-"+user.getEmail();
         content = content.replace("[[URL]]",verifyUrl);
         helper.setText(content,true);
         MailSender.send(message);
@@ -61,7 +60,7 @@ public class MailService {
         userRepository.save(user);
         sendForgotMail(user,code);
     }
-    @RequestMapping("/forgot")
+
     public void sendForgotMail(User user,String code)throws MessagingException,UnsupportedEncodingException{
         String toAddress = user.getEmail();
         String fromAddress = "vidhudanzz@gmail.com";
@@ -79,7 +78,7 @@ public class MailService {
         helper.setTo(toAddress);
         helper.setSubject(subject);
         content = content.replace("[[name]]", user.getFullname());
-        String verifyUrl = "http://127.0.0.1:8080/forgot?code="+code+"-"+user.getEmail();
+        String verifyUrl = "http://127.0.0.1:8080/restapi/password/verify?code="+code+"-"+user.getEmail();
         content = content.replace("[[URL]]",verifyUrl);
         helper.setText(content,true);
         MailSender.send(message);
@@ -92,7 +91,7 @@ public class MailService {
         String subject = "Christmas sale";
         String content = "Dear [[name]] ,<br>"
                 + "Buy one get one free..";
-        List<User> users = userRepository.findAll();
+        List<User>users= (List<User>) userRepository.findAll();
         for (User usersForMail:users){
             if (usersForMail.getEnabled()){
                 toAddress = usersForMail.getEmail();

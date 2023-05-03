@@ -9,8 +9,6 @@ import java.util.Map;
 public class CustomOauth2User implements OAuth2User {
     private OAuth2User oauth2User;
 
-
-
     public  CustomOauth2User(OAuth2User oauth2User) {
         this.oauth2User = oauth2User;
     }

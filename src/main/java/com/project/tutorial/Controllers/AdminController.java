@@ -12,20 +12,16 @@ import java.util.ArrayList;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/admin")
+@RequestMapping("/categories/admin")
 public class AdminController {
+
     @Autowired
     UserRepository userRepository;
 
-    @RequestMapping(value = "/categories")
-    public ResponseEntity<?> allCategories(){
-        Optional<User> admin = userRepository.findOneById("vidhyasakar@divum.in");
-        return ResponseEntity.ok(admin.get().getCategories());
-    }
     @PutMapping("/addCategories/{item}")
     public ResponseEntity<?> addCategories(@PathVariable String item){
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        if (userRepository.findOneById(email).get().getRole().equals("ADMIN")){
+        if (userRepository.findOneById(email).get().getRole().equals("Admin")){
             Optional<User> admin = userRepository.findOneById(email);
             if (!admin.get().getCategories().contains(item)){
                 admin.get().getCategories().add(item);
@@ -34,12 +30,12 @@ public class AdminController {
             }
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Category already exists.");
         }
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("User not found.");
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("User not found or User is not a admin.");
     }
-    @DeleteMapping("/categories/deleteCategory/{item}")
+    @DeleteMapping("/deleteCategory/{item}")
     public ResponseEntity<?> deleteCategory(@PathVariable String item){
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        if (userRepository.findOneById(email).get().getRole().equals("ADMIN")){
+        if (userRepository.findOneById(email).get().getRole().equals("Admin")){
             Optional<User> admin = userRepository.findOneById(email);
             if (admin.get().getCategories().contains(item)){
                 admin.get().getCategories().remove(item);
@@ -48,20 +44,19 @@ public class AdminController {
             }
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Category not exist.");
         }
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("User not found.");
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("User not found or User is not a admin.");
     }
-
     @DeleteMapping("/categories/deleteall")
     public ResponseEntity<?> deleteAllCategories(){
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        if (userRepository.findOneById(email).get().getRole().equals("ADMIN")){
+        if (userRepository.findOneById(email).get().getRole().equals("Admin")){
             Optional<User> admin = userRepository.findOneById(email);
             System.out.println(admin);
             admin.get().setCategories(new ArrayList<>());
             userRepository.save(admin.get());
             return ResponseEntity.ok("Category has been reset.");
         }
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("User not found.");
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("User not found or User is not a admin.");
     }
 
 }

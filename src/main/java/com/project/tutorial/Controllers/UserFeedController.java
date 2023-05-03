@@ -1,28 +1,29 @@
 package com.project.tutorial.Controllers;
 
+import com.itextpdf.text.DocumentException;
+import com.opencsv.CSVWriter;
 import com.opencsv.bean.CsvToBean;
 import com.opencsv.bean.CsvToBeanBuilder;
 import com.opencsv.bean.StatefulBeanToCsv;
 import com.opencsv.bean.StatefulBeanToCsvBuilder;
-import com.project.tutorial.Jwt.JwtToken;
 import com.project.tutorial.Models.User;
 import com.project.tutorial.Models.UserFeed;
 import com.project.tutorial.Repositories.UserFeedRepo;
 import com.project.tutorial.Repositories.UserRepository;
+import com.project.tutorial.Services.GeneratePdf;
 import com.project.tutorial.Services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletResponse;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -33,8 +34,6 @@ import java.util.stream.Collectors;
 public class UserFeedController {
     @Autowired
     UserRepository userRepository;
-    @Autowired
-    private JwtToken jwtToken;
     @Autowired
     UserFeedRepo userFeedRepo;
     @Autowired
@@ -62,7 +61,11 @@ public class UserFeedController {
     @GetMapping("/myfeed/{id}")
     public ResponseEntity<?> myFeedById(@PathVariable String id) {
         if (userFeedRepo.existsById(id)) {
-            return ResponseEntity.ok(userFeedRepo.findOneById(id).get());
+            Optional<UserFeed>userOptional=userFeedRepo.findById(id);
+            if(userOptional.isPresent()){
+            return ResponseEntity.ok(userFeedRepo.findById(id).get());
+            }
+            return null;
         }
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Id not found.");
     }
@@ -126,13 +129,18 @@ public class UserFeedController {
     public List<List<UserFeed>> friendsFeed(){
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         Optional<User> user = userRepository.findById(email);
-        ArrayList<String> myFrdlist = user.get().getFriends();
+        List<String> myFrdlist = user.get().getFollowing();
         return myFrdlist.stream().map((frd) -> userFeedRepo.findAllByEmailAndAvailableAndVisibility(frd,true,"friends")).collect(Collectors.toList());
     }
     @GetMapping("/view/public")
     public List<UserFeed> publicFeed(){
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         return userFeedRepo.findAllByVisibility("public");
+    }
+    @GetMapping("/view/private")
+    private List<UserFeed> privateFeed(){
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        return userFeedRepo.findAllByEmailAndAvailableAndVisibility(email,true,"private");
     }
     @PostMapping("/csv/upload")
     private ResponseEntity<?> csvFileUpload(@RequestParam("file") MultipartFile file)throws IOException {
@@ -150,14 +158,35 @@ public class UserFeedController {
         }
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("No access for this user.");
     }
-    @GetMapping("/export")
+    @GetMapping("/exportCsv")
     public void exportCsv(HttpServletResponse response) throws Exception{
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         List<UserFeed> myFeed = userFeedRepo.findByEmail(email);
         response.setContentType("text/csv");
-        response.setHeader(HttpHeaders.CONTENT_DISPOSITION,"attachment; filename=\""+email+".csv\"");
+        response.setHeader(HttpHeaders.CONTENT_DISPOSITION,"attachment; filename=\"" + email + "\"");
         StatefulBeanToCsv<UserFeed> writer = new StatefulBeanToCsvBuilder<UserFeed>(response.getWriter())
+                .withQuotechar(CSVWriter.NO_QUOTE_CHARACTER)
+                .withSeparator(CSVWriter.DEFAULT_SEPARATOR)
+                .withOrderedResults(false)
                 .build();
         writer.write(myFeed);
+    }
+    @GetMapping("/exportPdf")
+    public ResponseEntity<InputStreamResource> exportPdf(HttpServletResponse response) throws DocumentException {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        response.setContentType("application/pdf");
+
+        String headerKey = "Content-Disposition";
+        String headerValue = "attachment; filename=\""+email+".Pdf\"";
+        response.setHeader(headerKey,headerValue);
+
+        List<UserFeed> userFeeds= userFeedRepo.findByEmail(email);
+        ByteArrayInputStream bis = GeneratePdf.exportPdf(userFeeds);
+
+        return ResponseEntity
+                .ok()
+                .header(headerKey,headerValue)
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(new InputStreamResource(bis));
     }
 }

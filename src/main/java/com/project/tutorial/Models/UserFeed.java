@@ -21,7 +21,6 @@ public class UserFeed implements Serializable {
     private ArrayList<String> tags;
     private String category;
     private boolean available = true;
-
     private String visibility;
 
     public UserFeed(String id, String email, String title, String description, String image, ArrayList<String> tags, String category, boolean available,String visibility) {
