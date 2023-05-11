@@ -1,4 +1,4 @@
-package com.project.capstone.Models;
+package com.project.capstone.Dao;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

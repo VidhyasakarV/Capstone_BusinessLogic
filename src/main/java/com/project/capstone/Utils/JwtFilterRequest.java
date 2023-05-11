@@ -1,4 +1,4 @@
-package com.project.capstone.Services;
+package com.project.capstone.Utils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.project.capstone.Jwt.JwtToken;
@@ -29,7 +29,8 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 public class JwtFilterRequest extends OncePerRequestFilter {
     @Autowired
     JwtToken jwtToken;
-    @Autowired UserService userService;
+    @Autowired
+    UserServiceUtils userServiceUtils;
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         final String authorizationHeader = request.getHeader("Authorization");
@@ -41,11 +42,14 @@ public class JwtFilterRequest extends OncePerRequestFilter {
                 username =jwtToken.extractUsername(jwt);
             }
             if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                UserDetails userDetails = this.userService.loadUserByUsername(username);
+                UserDetails userDetails = this.userServiceUtils.loadUserByUsername(username);
                 if (jwtToken.validateToken(jwt,userDetails)) {
                     UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken = new UsernamePasswordAuthenticationToken(userDetails,null, userDetails.getAuthorities());
                     usernamePasswordAuthenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
+                }
+                else {
+                    return;
                 }
             }
         }

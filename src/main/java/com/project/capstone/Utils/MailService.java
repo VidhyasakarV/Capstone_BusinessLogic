@@ -1,4 +1,4 @@
-package com.project.capstone.Services;
+package com.project.capstone.Utils;
 
 import com.project.capstone.Models.User;
 import com.project.capstone.Repositories.UserRepository;

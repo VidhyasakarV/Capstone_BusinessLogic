@@ -1,4 +1,4 @@
-package com.project.capstone.Services;
+package com.project.capstone.Utils;
 
 import com.project.capstone.Models.User;
 import com.project.capstone.Models.UserFriends;
@@ -18,7 +18,7 @@ import java.util.Optional;
 
 @Service
 @CacheConfig(cacheNames = {"UserLogin"})
-public class UserService implements UserDetailsService{
+public class UserServiceUtils implements UserDetailsService{
 
     @Autowired
     UserRepository userRepository;

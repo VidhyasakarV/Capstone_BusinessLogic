@@ -12,7 +12,7 @@ import java.util.List;
 @Table(name = "User")
 @Builder
 public class User implements Serializable {
-//    private Long id;
+
     @Id
     private String email;
     private String fullname;

@@ -1,8 +1,8 @@
 package com.project.capstone.Config;
 
 import com.project.capstone.Jwt.JwtToken;
-import com.project.capstone.Services.JwtFilterRequest;
-import com.project.capstone.Services.UserService;
+import com.project.capstone.Utils.JwtFilterRequest;
+import com.project.capstone.Utils.UserServiceUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,6 +18,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -26,9 +27,10 @@ import java.io.IOException;
 
 @Configuration
 @EnableWebSecurity
+@EnableWebMvc
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Autowired
-    UserService userService;
+    UserServiceUtils userServiceUtils;
     @Autowired
     CustomOAuth2UserService oAuth2UserService;
     @Autowired
@@ -38,14 +40,15 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-        auth.userDetailsService(userService).passwordEncoder(passwordEncoder());
+        auth.userDetailsService(userServiceUtils).passwordEncoder(passwordEncoder());
     }
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http.cors().and().csrf().disable().authorizeRequests()
-                .antMatchers("/restapi/**","/user/**","/admin/**","/feed/**","/oauth2/**","/login/**")
+                .antMatchers("/restapi/**","/user/**","/admin/**","/feed/**","/oauth2/**","/login/**","/Oauth/**")
                 .permitAll()
+                .antMatchers("/v3/api-docs","/v2/api-docs","/swagger-resources/**","/swagger-ui/**").permitAll()
                 .anyRequest().authenticated()
                 .and().sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
                 .oauth2Login()
@@ -57,16 +60,16 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
                                                         Authentication authentication) throws IOException, ServletException {
                         CustomOauth2User oauthUser = (CustomOauth2User) authentication.getPrincipal();
-                        userService.processOAuthPostLogin(oauthUser.getEmail(), authentication.getName(),"GOOGLE");
-                        final UserDetails userDetails = userService.loadUserByUsername(oauthUser.getEmail());
+                        userServiceUtils.processOAuthPostLogin(oauthUser.getEmail(), authentication.getName(),"GOOGLE");
+                        final UserDetails userDetails = userServiceUtils.loadUserByUsername(oauthUser.getEmail());
                         final String jwt = jwtToken.generateToken(userDetails);
-                        response.sendRedirect("/restapi/oauthsucess/"+jwt);
+                        response.sendRedirect("/Oauth/oauthsucess/"+jwt);
                     }
                 })
                 .and()
                 .logout().logoutSuccessUrl("/").permitAll()
                 .and()
-                .exceptionHandling().accessDeniedPage("/restapi/oauthUnsuces")
+                .exceptionHandling().accessDeniedPage("/Oauth/oauthUnsuces")
         ;
         http.addFilterBefore(jwtFilterRequest, UsernamePasswordAuthenticationFilter.class);
 
