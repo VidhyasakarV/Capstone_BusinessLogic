@@ -1,6 +1,6 @@
 package com.project.capstone.Service.Impl;
 
-import com.project.capstone.Jwt.JwtToken;
+import com.project.capstone.Utils.JwtToken;
 import com.project.capstone.Dao.LoginAuthRequest;
 import com.project.capstone.Models.User;
 import com.project.capstone.Repositories.Service.UserRepositoryService;

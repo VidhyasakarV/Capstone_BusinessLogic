@@ -1,6 +1,6 @@
 package com.project.capstone.Config;
 
-import com.project.capstone.Jwt.JwtToken;
+import com.project.capstone.Utils.JwtToken;
 import com.project.capstone.Utils.JwtFilterRequest;
 import com.project.capstone.Utils.UserServiceUtils;
 import org.springframework.beans.factory.annotation.Autowired;

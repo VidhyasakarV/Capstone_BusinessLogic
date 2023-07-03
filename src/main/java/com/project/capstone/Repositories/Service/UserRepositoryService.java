@@ -1,7 +1,6 @@
 package com.project.capstone.Repositories.Service;
 
 import com.project.capstone.Models.User;
-import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;

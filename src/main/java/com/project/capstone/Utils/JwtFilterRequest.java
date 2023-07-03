@@ -1,7 +1,6 @@
 package com.project.capstone.Utils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.project.capstone.Jwt.JwtToken;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.SignatureException;
 import lombok.extern.slf4j.Slf4j;

@@ -1,4 +1,4 @@
-package com.project.capstone.Jwt;
+package com.project.capstone.Utils;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;

@@ -48,8 +48,8 @@ public class UserFeedServiceImpl implements UserFeedService {
     public ResponseEntity<?> myFeedById(String id) {
         if (userFeedRepoService.existsById(id)) {
             Optional<UserFeed> userOptional=userFeedRepoService.findById(id);
-            if(!userOptional.isPresent()){
-                return ResponseEntity.ok(userFeedRepoService.findById(id).get());
+            if(userOptional.isPresent()){
+                return ResponseEntity.ok(userFeedRepoService.findById(id));
             }
             return null;
         }
@@ -58,10 +58,8 @@ public class UserFeedServiceImpl implements UserFeedService {
 
     @Override
     public ResponseEntity<?> deletePost(String id) {
-        String myEmail = SecurityContextHolder.getContext().getAuthentication().getName();
-        if (userFeedRepoService.existsById(id)
-                && userFeedRepoService.findById(id).get().getEmail().equals(myEmail)) {
-            Optional<UserFeed> userFeed = userFeedRepoService.findById(id);
+        Optional<UserFeed> userFeed = userFeedRepoService.findById(id);
+        if (userFeed.isPresent()) {
             userFeed.get().setAvailable(false);
             userFeedRepoService.save(userFeed.get());
             return ResponseEntity.ok("Post has been Deleted , You can see it in Archive");
