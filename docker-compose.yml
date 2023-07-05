@@ -10,7 +10,7 @@ services:
   mysql:
     image: mysql:latest
     ports:
-      - 3306:3306
+      - 7070:3306
     environment:
       - MYSQL_ROOT_PASSWORD=vidhu369
       - MYSQL_DATABASE=capstone
