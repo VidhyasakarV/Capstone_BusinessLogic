@@ -28,7 +28,7 @@ services:
       - mysql
     environment:
       - SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/Capstone-backend
-      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/capstone
+      - SPRING_DATASOURCE_URL=jdbc:mysql://localhost:3306/capstone
       - SPRING_DATASOURCE_USERNAME=vidhyasakar
       - SPRING_DATASOURCE_PASSWORD=vidhu369
 
