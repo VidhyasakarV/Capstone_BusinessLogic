@@ -1,11 +1,11 @@
 FROM openjdk:8
 
+WORKDIR /app
+
 COPY target/spring-capstone.jar spring-capstone.jar
 
-MAINTAINER capstone.com
+EXPOSE 8080
 
-#WORKDIR /app
+#MAINTAINER capstone.com
 
-ENTRYPOINT ["java", "-jar", "/spring-capstone.jar"]
-
-#EXPOSE 5050
+CMD ["java", "-jar", "/spring-capstone.jar"]

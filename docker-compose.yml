@@ -1,26 +1,86 @@
-version: "3"
+version: '3'
 services:
   mongodb:
     image: mongo:latest
     ports:
-      - "27017:8082"
-#    network_mode: host
+      - 27017:27017
     volumes:
-      - mongo_database:/data/capstone
-    networks:
-      - capstone-nd-mongo
+      - mongodb_data:/data/db
 
-  capstone:
-    image: capstone:latest
-    build: .
+  mysql:
+    image: mysql:latest
+    ports:
+      - 3306:3306
+    environment:
+      - MYSQL_ROOT_PASSWORD=vidhu369
+      - MYSQL_DATABASE=capstone
+    volumes:
+      - mysql_data:/mysql_data/db
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - 8080:8080
     depends_on:
       - mongodb
-    ports:
-      - "8081:8081"
-    networks:
-      - capstone-nd-mongo
+      - mysql
+    environment:
+      - SPRING_DATA_MONGODB_URI=mongodb://mongodb:27017/Capstone-backend
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/capstone
+      - SPRING_DATASOURCE_USERNAME=vidhyasakar
+      - SPRING_DATASOURCE_PASSWORD=vidhu369
 
-networks:
-  capstone-nd-mongo:
 volumes:
-  mongo_database:
+  mongodb_data:
+  mysql_data:
+
+
+#version: "3"
+#services:
+#  app:
+#    image: capstone:latest
+#    ports:
+#      - 8083:9090
+#    working_dir: /app
+#    volumes:
+#      - ./:/app
+#    environment:
+#      MYSQL_HOST: localhost
+#      MYSQL_USER: vidhyasakar
+#      MYSQL_PASSWORD: vidhu369
+#      MYSQL_DB: capstone
+#  mysql:
+#    image: mysql:latest
+#    volumes:
+#      - mysql-data:/usr/lib/mysql
+#    environment:
+#      MYSQL_ROOT_PASSWORD: vidhu369
+#      MYSQL_DATABASE: capstone
+#
+#  mongodb:
+#    image: mongo:latest
+##    ports:
+##      - 27017:8082
+##    network_mode: host
+#    volumes:
+#      - mongo_database:/data/capstone
+#    networks:
+#      - capstone-nd-mongo
+#
+#  capstone:
+#    image: capstone:latest
+#    build: .
+#    depends_on:
+#      - mongodb
+#    ports:
+#      - 8084:8084
+#    networks:
+#      - capstone-nd-mongo
+#
+#networks:
+#  capstone-nd-mongo:
+#volumes:
+#  mongo_database:
+#  mysql-data:
