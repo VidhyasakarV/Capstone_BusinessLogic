@@ -1,5 +1,20 @@
 version: '3'
 services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - 2020:8080
+    depends_on:
+      - mongodb
+      - mysql
+    environment:
+      - SPRING_DATA_MONGODB_URI=mongodb://localhost:27017/Capstone-backend
+      - SPRING_DATASOURCE_URL=jdbc:mysql://127.0.0.1:3306/capstone
+      - SPRING_DATASOURCE_USERNAME=vidhyasakar
+      - SPRING_DATASOURCE_PASSWORD=vidhu369
+
   mongodb:
     image: mongo:latest
     ports:
@@ -16,21 +31,6 @@ services:
       - MYSQL_DATABASE=capstone
     volumes:
       - mysql_data:/mysql_data/db
-
-  app:
-    build: .
-#      context: .
-#      dockerfile: Dockerfile
-    ports:
-      - 8080:8080
-    depends_on:
-      - mongodb
-      - mysql
-    environment:
-      - SPRING_DATA_MONGODB_URI=mongodb://localhost:27017/Capstone-backend
-      - SPRING_DATASOURCE_URL=jdbc:mysql://localhost:3306/capstone
-      - SPRING_DATASOURCE_USERNAME=vidhyasakar
-      - SPRING_DATASOURCE_PASSWORD=vidhu369
 
 volumes:
   mongodb_data:

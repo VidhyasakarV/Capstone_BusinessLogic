@@ -6,6 +6,4 @@ COPY target/spring-capstone.jar spring-capstone.jar
 
 EXPOSE 8080
 
-MAINTAINER capstone.com
-
-ENTRYPOINT ["java", "-jar", "/spring-capstone.jar"]
+CMD ["java", "-jar", "/spring-capstone.jar"]
